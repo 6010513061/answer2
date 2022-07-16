@@ -1,0 +1,76 @@
+import pandas as pd
+from pyarrow import feather
+
+# MMR: คือ drug_code = 783,2824
+# flu: คือ drug_code = 1745,1744,1807,2149,2200,2678,2976
+# DT: คือ drug_code = 837
+
+df = pd.read_feather("C:\\Users\\acer\\Downloads\\exam2.feather")
+dct_dt={}
+dct_mmr={}
+dct_flu={}
+lst_drug=[]
+MMR=['783','2824']
+flu=['1745','1744','1807','2149','2200','2678','2976']
+DT=['837']
+p1=df.loc[((df["uid"]!='NULL')&(df['drug_code']!='NULL')&(df["disp_date"]!='NULL'))]
+
+#append DT in dct_dt
+for i in DT:
+    r = p1.loc[(p1["drug_code"]==int(i))]
+    for n in range(len(r)):
+        r1 = r.iloc[n]
+        dct_dt.setdefault(str(r1['uid']),[str(r1['drug_code']),str(r1["disp_date"])])
+
+#append mmr in dct_mmr        
+for n1 in MMR:
+    r2 = p1.loc[(p1["drug_code"]==int(n1))]
+    for c1 in range(len(r2)):
+        l1 = r2.iloc[c1]
+        dct_mmr.setdefault(str(l1['uid']),[str(l1['drug_code']),str(l1["disp_date"])])
+
+#append flu in dct_flu   
+for n2 in flu:
+    r3 = p1.loc[(p1["drug_code"]==int(n2))]
+    for c2 in range(len(r3)):
+        l2 = r3.iloc[c2]
+        dct_flu.setdefault(str(l2['uid']),[str(l2['drug_code']),str(l2["disp_date"])]) 
+
+#create DT dataframe
+dt_tbl = pd.DataFrame(data=dct_dt.items())
+dt_tbl.columns=['uid','DT']
+t1=dt_tbl['DT']
+lst_data=[]
+for i in t1:
+    lst_data.append(i[1])
+new = dt_tbl.assign(DT_date=lst_data)
+re3=new['DT']
+
+#create mmr dataframe
+mmr_tbl = pd.DataFrame(data=dct_mmr.items())
+mmr_tbl.columns=['uid','MMR']
+t2=mmr_tbl['MMR']
+lst_data1=[]
+for i1 in t2:
+    lst_data1.append(i1[1])
+new1 = mmr_tbl.assign(MMR_date=lst_data1)
+
+#create flu dataframe
+flu_tbl = pd.DataFrame(data=dct_flu.items())
+flu_tbl.columns=['uid','flu']
+t2=flu_tbl['flu']
+lst_data2=[]
+for i2 in t2:
+    lst_data2.append(i2[1])
+new2 = flu_tbl.assign(flu_date=lst_data2)
+
+#merge columns where uid are match
+dt1 = pd.merge(new,new1,how='left',on=['uid','uid'])
+dt2 = pd.merge(dt1,new2,how='left',on=['uid','uid'])
+dt2.pop('DT')
+dt2.pop('flu')
+dt2.pop('MMR')
+
+#export dataframe to file feather
+n1=dt2.to_feather('answer2.feather')
+n1
